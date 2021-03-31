@@ -60,7 +60,6 @@ CHIP ALU {
         // Negar a saída
         Not16(in=xopy, out=notxopy);
         Mux16(a=xopy, b=notxopy, sel=no, out[0..7]=out1, out[8..15]=out2, out[15]=outlast, out=out);
-        // And16(a=output, b=true, out=out); // por algum motivo HDL não deixa usar out direto
 
         // É zero apenas se todos os bits forem zero.
         Or8Way(in=out1, out=z1);
