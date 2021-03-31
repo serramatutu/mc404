@@ -42,5 +42,32 @@ CHIP ALU {
         ng; // 1 if (out < 0),  0 otherwise
 
     PARTS:
-   // Put you code here:
+        // Tratar X
+        Mux16(a=x, b=false, sel=zx, out=xzx);
+        Not16(in=xzx, out=xnx);
+        Mux16(a=xzx, b=xnx, sel=nx, out=xprocessed);
+
+        // Tratar Y
+        Mux16(a=y, b=false, sel=zy, out=yzy);
+        Not16(in=yzy, out=yny);
+        Mux16(a=yzy, b=yny, sel=ny, out=yprocessed);
+
+        // Operação entre X e Y
+        And16(a=xprocessed, b=yprocessed, out=xandy);
+        Add16(a=xprocessed, b=yprocessed, out=xplusy);
+        Mux16(a=xandy, b=xplusy, sel=f, out=xopy);
+
+        // Negar a saída
+        Not16(in=xopy, out=notxopy);
+        Mux16(a=xopy, b=notxopy, sel=no, out[0..7]=out1, out[8..15]=out2, out[15]=outlast, out=out);
+        // And16(a=output, b=true, out=out); // por algum motivo HDL não deixa usar out direto
+
+        // É zero apenas se todos os bits forem zero.
+        Or8Way(in=out1, out=z1);
+        Or8Way(in=out2, out=z2);
+        Or(a=z1, b=z2, out=notzr);
+        Not(in=notzr, out=zr);
+
+        // É negativo apenas se o bit 15 for 1 (complemento de 2)
+        And(a=outlast, b=true, out=ng);
 }
