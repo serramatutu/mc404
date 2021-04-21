@@ -16,5 +16,16 @@ CHIP PC {
     OUT out[16];
 
     PARTS:
-    // Put your code here:
+
+    // Sinal para incremento
+    Inc16(in=outregister, out=incregister);
+
+    // Mux inc
+    Mux16(a=outregister, b=incregister, sel=inc, out=muxinc);
+    // Mux load
+    Mux16(a=muxinc, b=in, sel=load, out=muxload);
+    // Mux reset
+    Mux16(a=muxload, b=false, sel=reset, out=muxreset);
+
+    Register(in=muxreset, load=true, out=out, out=outregister);
 }
