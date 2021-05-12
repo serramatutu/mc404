@@ -39,5 +39,120 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+
+    // ----- REGISTRADOR D -----
+    // if (instruction[15] == 1 and instruction[4] == 1): # d2 == 1 (instrução diz que saída da ALU deve ser armazenada em D)
+    //    RegD = ALUOut
+    And(a=instruction[15], b=instruction[4], out=RDLoad);
+    DRegister(in=ALUOut, load=RDLoad, out=RDOut);
+
+
+    // ----- REGISTRADOR A -----
+    // if (instruction[15] == 0): # instrução do tipo A
+    //    RegA = instruction
+    // else if (instruction[5] == 1): # d1 == 1 (instrução diz que saída da ALU deve ser armazenada em A)
+    //    RegA = ALUOut
+    Mux16(a=instruction, b=ALUOut, sel=instruction[15], out=RAIn);
+    Not(in=instruction[15], out=isAInstruction);
+    Or(a=isAInstruction, b=instruction[5], out=RALoad);
+    ARegister(
+        in=RAIn, 
+        load=RALoad, 
+        out=RAOut, 
+        out[0..14]=addressM // saída de RA sempre endereça a memória
+    );
+
+    // ----- Write M -----
+    // if (instruction[15] == 1 and instruction[3] == 1): # d3 == 1 (instrução diz que saída da ALU deve ser armazenada em M)
+    //    writeM = true
+    // else:
+    //    writeM = false
+    And(a=instruction[15], b=instruction[3], out=writeM);
+
+    // ----- ALU -----
+    // if (instruction[12] == 0): # a == 0 (instrução diz que segunda entrada da ALU é o registrador A)
+    //    ALUIn = RegA
+    // else:
+    //    ALUIn = inM
+    Mux16(a=RAOut, b=inM, sel=instruction[12], out=ALUIn);
+    ALU(
+        x=RDOut, y=ALUIn,
+
+        zx=instruction[11], // c1
+        nx=instruction[10], // c2
+        zy=instruction[9], // c3
+        ny=instruction[8], // c4
+        f=instruction[7],  // c5
+        no=instruction[6], // c6
+
+        out=ALUOut,
+        out=outM, // saída da ALU vai para a memória sempre
+
+        zr=ALUOutZr,
+        ng=ALUOutNg
+    );
+
+    // ----- PC -----
+    // if (reset == 1):
+    //    PC = 0
+    // else if (pcLoad == 1):
+    //    PC = A
+    // else:
+    //    PC = PC + 1
+    //
+    // pcLoad é determinado conforme a função abaixo, se a instrução for do tipo C.
+    // -----------------------------
+    // CMD | j1 j2 j3 | pcLoad
+    // -----------------------------
+    // NIL | 0  0  0  | 0
+    // JGT | 0  0  1  | !zr and !ng
+    // JEQ | 0  1  0  | zr
+    // JGE | 0  1  1  | !ng
+    // JLT | 1  0  0  | ng
+    // JNE | 1  0  1  | !zr
+    // JLE | 1  1  0  | ng or zr
+    // JMP | 1  1  1  | 1
+    // -----------------------------
+    // considerando que j1, j2 e j3 são instruction [0], [1] e [2], respectivamente.
+    Not(in=ALUOutZr, out=NotALUOutZr);
+    Not(in=ALUOutNg, out=NotALUOutNg);
+    
+    And(a=NotALUOutZr, b=NotALUOutNg, out=ALUCmpGt);
+    Or(a=ALUOutZr, b=ALUOutNg, out=ALUCmpLe);
+
+    // implementação da tabela verdade acima
+    Mux8Way16(
+        a[1..15]=false,
+        a[0]=false,       // NIL
+
+        b[1..15]=false,
+        b[0]=ALUCmpGt,    // JGT
+
+        c[1..15]=false,
+        c[0]=ALUOutZr,    // JEQ
+
+        d[1..15]=false,
+        d[0]=NotALUOutNg, // JGE
+
+        e[1..15]=false,
+        e[0]=ALUOutNg,    // JLT
+
+        f[1..15]=false,
+        f[0]=NotALUOutZr, // JNE
+
+        g[1..15]=false,
+        g[0]=ALUCmpLe,    // JLE
+
+        h[1..15]=false,
+        h[0]=true,        // JMP
+
+        sel=instruction[0..2], 
+        out[0]=pcLoadIfCInstruction
+    );
+
+    // garante que a instrução é do tipo C
+    And(a=instruction[15], b=pcLoadIfCInstruction, out=pcLoad);
+
+    PC(in=RAOut, load=pcLoad, inc=true, reset=reset, out[0..14]=pc);
+
 }

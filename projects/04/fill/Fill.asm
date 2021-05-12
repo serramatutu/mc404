@@ -14,7 +14,7 @@
 // Put your code here.
 
 // Pseudocódigo
-// screen_end = SCREEN + 16384 # 16384 = (512*256/WORD_SIZE)
+// screen_end = SCREEN + 8192 # 8192 = (512*256/WORD_SIZE)
 // LISTENER:
 //   if KBD == 0:
 //     color = 0  # white
@@ -36,7 +36,7 @@ D=A
 @SCREEN
 D=D+A
 @screen_end
-M=D                        // screen_end = SCREEN + 16384
+M=D                        // screen_end = SCREEN + 8192
 
 (LISTENER)
   @KBD
