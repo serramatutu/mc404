@@ -9,21 +9,21 @@ SomaVetor:
     _SomaVetorFor:
         bge t0, t1, _SomaVetorFim
 
-        # t2: posicao de memoria atual em a        
-        add t2, a0, t0
-        # t2: valor atual de a
+        # t2: posicao de memoria atual em c    
+        add t2, a2, t0
+        # t2: valor atual de c
         lw t2, t2, 0
 
         # t3: posicao de memoria atual em b    
         add t3, a1, t0
-        # t3: valor atual de a
+        # t3: valor atual de b
         lw t3, t3, 0
 
-        # t2: soma de a e b
+        # t2: soma de b e c
         add t2, t2, t3
 
-        # t3: posicao de memoria atual em c
-        add t3, a2, t0
+        # t3: posicao de memoria atual em a
+        add t3, a0, t0
         # escreve t2 em mem[t3]
         sw t2, t3, 0
 
